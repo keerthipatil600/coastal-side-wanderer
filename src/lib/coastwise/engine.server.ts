@@ -355,7 +355,7 @@ export async function buildPlan(input: TripInput): Promise<PlanResult> {
 
     dayPlans.push({
       day: d + 1,
-      date,
+      ...(date ? { date } : {}),
       base: town,
       headline: `${town} — ${chosen[0]?.name ?? "coastal exploring"}`,
       note: `Based around ${town}, tuned for a ${input.intensity} pace.`,
