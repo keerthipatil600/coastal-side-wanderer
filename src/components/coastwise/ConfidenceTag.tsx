@@ -11,7 +11,7 @@ export function ConfidenceTag({
   source,
 }: {
   confidence: string;
-  source?: string | null;
+  source?: string | null | undefined;
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
