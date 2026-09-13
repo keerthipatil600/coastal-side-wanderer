@@ -201,7 +201,7 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
                   <div className="mt-2 flex items-center justify-between">
                     <ConfidenceTag confidence={s.confidence} source={s.source} />
                     <Button asChild size="sm" variant="outline" className="rounded-full">
-                      <a href={bookingUrls.stay} target="_blank" rel="noreferrer noopener">
+                      <a href={bookingUrls['stay']} target="_blank" rel="noreferrer noopener">
                         Book stay
                       </a>
                     </Button>
@@ -246,7 +246,7 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
                     <ConfidenceTag confidence={t.confidence} source={t.source} />
                     <Button asChild size="sm" variant="outline" className="rounded-full">
                       <a
-                        href={bookingUrls[t.bookingKind] ?? bookingUrls.bus}
+                        href={bookingUrls[t.bookingKind] ?? bookingUrls['bus']}
                         target="_blank"
                         rel="noreferrer noopener"
                       >
