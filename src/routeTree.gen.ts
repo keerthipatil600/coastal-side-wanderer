@@ -10,12 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as PlanRouteImport } from './routes/plan'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HowItWorksRoute = HowItWorksRouteImport.update({
@@ -31,30 +43,38 @@ const PlanRoute = PlanRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/dashboard': typeof DashboardRoute
   '/how-it-works': typeof HowItWorksRoute
   '/plan': typeof PlanRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/dashboard': typeof DashboardRoute
   '/how-it-works': typeof HowItWorksRoute
   '/plan': typeof PlanRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/dashboard': typeof DashboardRoute
   '/how-it-works': typeof HowItWorksRoute
   '/plan': typeof PlanRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/how-it-works' | '/plan'
+  fullPaths: '/' | '/admin' | '/dashboard' | '/how-it-works' | '/plan'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/how-it-works' | '/plan'
-  id: '__root__' | '/' | '/how-it-works' | '/plan'
+  to: '/' | '/admin' | '/dashboard' | '/how-it-works' | '/plan'
+  id: '__root__' | '/' | '/admin' | '/dashboard' | '/how-it-works' | '/plan'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  DashboardRoute: typeof DashboardRoute
   HowItWorksRoute: typeof HowItWorksRoute
   PlanRoute: typeof PlanRoute
 }
@@ -66,6 +86,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/how-it-works': {
@@ -87,6 +121,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  DashboardRoute: DashboardRoute,
   HowItWorksRoute: HowItWorksRoute,
   PlanRoute: PlanRoute,
 }
