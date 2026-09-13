@@ -1,0 +1,13 @@
+{
+  "name": "CoastWise AI — Coastal Karnataka trip planner",
+  "short_name": "CoastWise AI",
+  "description": "AI itineraries for Coastal Karnataka with budgets, stays, food and offline saved trips.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fbf6ec",
+  "theme_color": "#0f4c6b",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ]
+}
