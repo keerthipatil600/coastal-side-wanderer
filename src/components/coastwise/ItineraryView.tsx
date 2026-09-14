@@ -201,7 +201,11 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
                   <div className="mt-2 flex items-center justify-between">
                     <ConfidenceTag confidence={s.confidence} source={s.source} />
                     <Button asChild size="sm" variant="outline" className="rounded-full">
-                      <a href={bookingUrls['stay']} target="_blank" rel="noreferrer noopener">
+                      <a
+                        href={bookingLink("stay", plan.input.origin, s.town, plan.input.startDate).url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
                         Book stay
                       </a>
                     </Button>
@@ -242,15 +246,34 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
                     ~{inr(t.costInr)} · ~{Math.floor(t.durationMin / 60)}h {t.durationMin % 60}m
                   </p>
                   {t.notes ? <p className="text-xs text-muted-foreground">{t.notes}</p> : null}
+                  <p className="text-xs text-muted-foreground">
+                    {plan.input.origin} → {firstStop}
+                    {plan.input.startDate ? ` · ${plan.input.startDate}` : ""}
+                  </p>
                   <div className="flex items-center justify-between pt-1">
                     <ConfidenceTag confidence={t.confidence} source={t.source} />
-                    <Button asChild size="sm" variant="outline" className="rounded-full">
+                    <Button asChild size="sm" className="rounded-full">
                       <a
-                        href={bookingUrls[t.bookingKind] ?? bookingUrls['bus']}
+                        href={
+                          bookingLink(
+                            t.bookingKind,
+                            plan.input.origin,
+                            firstStop,
+                            plan.input.startDate,
+                          ).url
+                        }
                         target="_blank"
                         rel="noreferrer noopener"
                       >
-                        Book {t.bookingKind}
+                        Book on{" "}
+                        {
+                          bookingLink(
+                            t.bookingKind,
+                            plan.input.origin,
+                            firstStop,
+                            plan.input.startDate,
+                          ).provider
+                        }
                       </a>
                     </Button>
                   </div>
