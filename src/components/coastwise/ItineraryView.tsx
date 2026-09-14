@@ -2,23 +2,22 @@ import { Bus, Clock, Coffee, MapPin, Route as RouteIcon, Sparkles, Utensils, Wav
 
 import { ConfidenceTag } from "@/components/coastwise/ConfidenceTag";
 import { inr } from "@/components/coastwise/BudgetPanel";
+import { RouteMapCard } from "@/components/coastwise/RouteMapCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { PlanResult } from "@/lib/coastwise/types";
-
-const bookingUrls: Record<string, string> = {
-  bus: "https://www.redbus.in/",
-  train: "https://www.irctc.co.in/",
-  flight: "https://www.google.com/travel/flights",
-  taxi: "https://www.google.com/search?q=coastal+karnataka+taxi+booking",
-  stay: "https://www.google.com/travel/hotels",
-};
+import { bookingLink } from "@/lib/coastwise/booking";
+import type { MapPoint, PlanResult } from "@/lib/coastwise/types";
 
 export function ItineraryView({ plan }: { plan: PlanResult }) {
   const { itinerary } = plan;
+  const firstStop = itinerary.routeOrder[0] ?? plan.input.destinations[0] ?? "Udupi";
+  const dayPoints = (day: PlanResult["itinerary"]["days"][number]): MapPoint[] =>
+    day.blocks
+      .filter((b) => Number.isFinite(b.lat) && Number.isFinite(b.lng))
+      .map((b) => ({ name: b.title, town: b.town, lat: b.lat, lng: b.lng }));
 
   return (
     <div className="space-y-6">
@@ -47,6 +46,7 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
       <Tabs defaultValue="days">
         <TabsList className="flex w-full flex-wrap justify-start rounded-full">
           <TabsTrigger value="days">Day by day</TabsTrigger>
+          <TabsTrigger value="map">Map & routes</TabsTrigger>
           <TabsTrigger value="way">On the way</TabsTrigger>
           <TabsTrigger value="stays">Stays & food</TabsTrigger>
           <TabsTrigger value="travel">Travel</TabsTrigger>
@@ -85,8 +85,33 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
                       {inr(leg.costInr)}
                     </span>
                     <ConfidenceTag confidence={leg.confidence} source={leg.source} />
+                    <Button asChild size="sm" variant="outline" className="ml-auto rounded-full">
+                      <a
+                        href={
+                          bookingLink(
+                            leg.mode === "train" || leg.mode === "flight" || leg.mode === "bus"
+                              ? leg.mode
+                              : "taxi",
+                            leg.fromTown,
+                            leg.toTown,
+                            day.date ?? plan.input.startDate,
+                          ).url
+                        }
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        Book
+                      </a>
+                    </Button>
                   </div>
                 ))}
+
+                <RouteMapCard
+                  title={`Day ${day.day} map`}
+                  subtitle="Tap a numbered stop for navigation"
+                  points={dayPoints(day)}
+                  height="h-64"
+                />
 
                 <div className="grid gap-3 md:grid-cols-3">
                   {day.blocks.map((block, i) => (
@@ -172,6 +197,27 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
           ))}
         </TabsContent>
 
+        <TabsContent value="map" className="space-y-5 pt-5">
+          <RouteMapCard
+            title="Full trip route"
+            subtitle={itinerary.routeOrder.join(" → ")}
+            points={itinerary.routeCoords}
+            height="h-96"
+          />
+          {itinerary.days.map((day) => (
+            <RouteMapCard
+              key={`map-${day.day}`}
+              title={`Day ${day.day} route`}
+              subtitle={day.blocks.map((b) => b.title).join(" → ")}
+              points={dayPoints(day)}
+            />
+          ))}
+          <p className="text-xs text-muted-foreground">
+            Distances and drive times come from Google Maps when online. Tap any stop to open it in
+            Google Maps for turn-by-turn navigation.
+          </p>
+        </TabsContent>
+
         <TabsContent value="way" className="space-y-4 pt-5">
           <SectionGrid
             title="Places on the way"
@@ -201,7 +247,11 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
                   <div className="mt-2 flex items-center justify-between">
                     <ConfidenceTag confidence={s.confidence} source={s.source} />
                     <Button asChild size="sm" variant="outline" className="rounded-full">
-                      <a href={bookingUrls['stay']} target="_blank" rel="noreferrer noopener">
+                      <a
+                        href={bookingLink("stay", plan.input.origin, s.town, plan.input.startDate).url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
                         Book stay
                       </a>
                     </Button>
@@ -242,15 +292,34 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
                     ~{inr(t.costInr)} · ~{Math.floor(t.durationMin / 60)}h {t.durationMin % 60}m
                   </p>
                   {t.notes ? <p className="text-xs text-muted-foreground">{t.notes}</p> : null}
+                  <p className="text-xs text-muted-foreground">
+                    {plan.input.origin} → {firstStop}
+                    {plan.input.startDate ? ` · ${plan.input.startDate}` : ""}
+                  </p>
                   <div className="flex items-center justify-between pt-1">
                     <ConfidenceTag confidence={t.confidence} source={t.source} />
-                    <Button asChild size="sm" variant="outline" className="rounded-full">
+                    <Button asChild size="sm" className="rounded-full">
                       <a
-                        href={bookingUrls[t.bookingKind] ?? bookingUrls['bus']}
+                        href={
+                          bookingLink(
+                            t.bookingKind,
+                            plan.input.origin,
+                            firstStop,
+                            plan.input.startDate,
+                          ).url
+                        }
                         target="_blank"
                         rel="noreferrer noopener"
                       >
-                        Book {t.bookingKind}
+                        Book on{" "}
+                        {
+                          bookingLink(
+                            t.bookingKind,
+                            plan.input.origin,
+                            firstStop,
+                            plan.input.startDate,
+                          ).provider
+                        }
                       </a>
                     </Button>
                   </div>

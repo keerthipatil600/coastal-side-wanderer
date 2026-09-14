@@ -65,6 +65,15 @@ export interface ItineraryBlock extends Confidence {
   durationMin: number;
   costInr: number;
   category: string;
+  lat: number;
+  lng: number;
+}
+
+export interface MapPoint {
+  name: string;
+  town: string;
+  lat: number;
+  lng: number;
 }
 
 export interface MealSuggestion extends Confidence {
@@ -155,6 +164,7 @@ export interface Itinerary {
   tagline: string;
   summary: string;
   routeOrder: string[];
+  routeCoords: MapPoint[];
   days: DayPlan[];
   placesOnTheWay: PlaceOnTheWay[];
   stays: StaySuggestion[];
