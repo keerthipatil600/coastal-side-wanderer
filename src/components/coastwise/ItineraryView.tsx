@@ -2,23 +2,22 @@ import { Bus, Clock, Coffee, MapPin, Route as RouteIcon, Sparkles, Utensils, Wav
 
 import { ConfidenceTag } from "@/components/coastwise/ConfidenceTag";
 import { inr } from "@/components/coastwise/BudgetPanel";
+import { RouteMapCard } from "@/components/coastwise/RouteMapCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { PlanResult } from "@/lib/coastwise/types";
-
-const bookingUrls: Record<string, string> = {
-  bus: "https://www.redbus.in/",
-  train: "https://www.irctc.co.in/",
-  flight: "https://www.google.com/travel/flights",
-  taxi: "https://www.google.com/search?q=coastal+karnataka+taxi+booking",
-  stay: "https://www.google.com/travel/hotels",
-};
+import { bookingLink } from "@/lib/coastwise/booking";
+import type { MapPoint, PlanResult } from "@/lib/coastwise/types";
 
 export function ItineraryView({ plan }: { plan: PlanResult }) {
   const { itinerary } = plan;
+  const firstStop = itinerary.routeOrder[0] ?? plan.input.destinations[0] ?? "Udupi";
+  const dayPoints = (day: PlanResult["itinerary"]["days"][number]): MapPoint[] =>
+    day.blocks
+      .filter((b) => Number.isFinite(b.lat) && Number.isFinite(b.lng))
+      .map((b) => ({ name: b.title, town: b.town, lat: b.lat, lng: b.lng }));
 
   return (
     <div className="space-y-6">
@@ -47,6 +46,7 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
       <Tabs defaultValue="days">
         <TabsList className="flex w-full flex-wrap justify-start rounded-full">
           <TabsTrigger value="days">Day by day</TabsTrigger>
+          <TabsTrigger value="map">Map & routes</TabsTrigger>
           <TabsTrigger value="way">On the way</TabsTrigger>
           <TabsTrigger value="stays">Stays & food</TabsTrigger>
           <TabsTrigger value="travel">Travel</TabsTrigger>
