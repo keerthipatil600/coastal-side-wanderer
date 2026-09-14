@@ -85,8 +85,33 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
                       {inr(leg.costInr)}
                     </span>
                     <ConfidenceTag confidence={leg.confidence} source={leg.source} />
+                    <Button asChild size="sm" variant="outline" className="ml-auto rounded-full">
+                      <a
+                        href={
+                          bookingLink(
+                            leg.mode === "train" || leg.mode === "flight" || leg.mode === "bus"
+                              ? leg.mode
+                              : "taxi",
+                            leg.fromTown,
+                            leg.toTown,
+                            day.date ?? plan.input.startDate,
+                          ).url
+                        }
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        Book
+                      </a>
+                    </Button>
                   </div>
                 ))}
+
+                <RouteMapCard
+                  title={`Day ${day.day} map`}
+                  subtitle="Tap a numbered stop for navigation"
+                  points={dayPoints(day)}
+                  height="h-64"
+                />
 
                 <div className="grid gap-3 md:grid-cols-3">
                   {day.blocks.map((block, i) => (
@@ -170,6 +195,27 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
               </CardContent>
             </Card>
           ))}
+        </TabsContent>
+
+        <TabsContent value="map" className="space-y-5 pt-5">
+          <RouteMapCard
+            title="Full trip route"
+            subtitle={itinerary.routeOrder.join(" → ")}
+            points={itinerary.routeCoords}
+            height="h-96"
+          />
+          {itinerary.days.map((day) => (
+            <RouteMapCard
+              key={`map-${day.day}`}
+              title={`Day ${day.day} route`}
+              subtitle={day.blocks.map((b) => b.title).join(" → ")}
+              points={dayPoints(day)}
+            />
+          ))}
+          <p className="text-xs text-muted-foreground">
+            Distances and drive times come from Google Maps when online. Tap any stop to open it in
+            Google Maps for turn-by-turn navigation.
+          </p>
         </TabsContent>
 
         <TabsContent value="way" className="space-y-4 pt-5">
