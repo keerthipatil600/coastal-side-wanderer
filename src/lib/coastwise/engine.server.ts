@@ -300,6 +300,8 @@ export async function buildPlan(input: TripInput): Promise<PlanResult> {
         durationMin: p.suggested_duration_min,
         costInr: p.entry_fee_inr * input.people,
         category: p.category,
+        lat: p.lat,
+        lng: p.lng,
         confidence: (p.confidence as ItineraryBlock["confidence"]) ?? "approximate",
         source: p.source_url,
       };
@@ -526,6 +528,10 @@ export async function buildPlan(input: TripInput): Promise<PlanResult> {
       copy?.summary ??
       `A ${days}-day route from ${input.origin} through ${routeOrder.join(" → ")}, built for ${input.people} traveller(s) on a ₹${input.budgetInr.toLocaleString("en-IN")} budget.`,
     routeOrder,
+    routeCoords: routeOrder.map((t) => {
+      const c = townCentroid(kb, t);
+      return { name: t, town: t, lat: c.lat, lng: c.lng };
+    }),
     days: dayPlans.map((d) => {
       const c = copy?.days?.find((x) => x.day === d.day);
       return { ...d, headline: c?.headline ?? d.headline, note: c?.note ?? d.note };
