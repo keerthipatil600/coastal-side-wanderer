@@ -103,3 +103,108 @@ export const getRoute = createServerFn({ method: "POST" })
       return { ...empty, message: "Live routing is unavailable right now." };
     }
   });
+
+const matrixSchema = z.object({
+  origin: pointSchema,
+  destinations: z.array(pointSchema.extend({ name: z.string().max(120) })).min(1).max(15),
+});
+
+export interface DistanceRow {
+  name: string;
+  distanceKm: number | null;
+  durationMin: number | null;
+  confidence: "live" | "unavailable";
+}
+
+export interface DistanceMatrixResult {
+  rows: DistanceRow[];
+  message?: string;
+}
+
+/**
+ * Driving distance + time from the traveller's current location to each stop,
+ * via the Google Routes distance-matrix API. Bounded to 15 stops per call.
+ */
+export const getDistancesFromHere = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => matrixSchema.parse(data))
+  .handler(async ({ data }): Promise<DistanceMatrixResult> => {
+    const lovableKey = process.env["LOVABLE_API_KEY"];
+    const mapsKey = process.env["GOOGLE_MAPS_API_KEY"];
+    const fallback = (message: string): DistanceMatrixResult => ({
+      rows: data.destinations.map((d) => ({
+        name: d.name,
+        distanceKm: null,
+        durationMin: null,
+        confidence: "unavailable" as const,
+      })),
+      message,
+    });
+    if (!lovableKey || !mapsKey) return fallback("Map routing is not connected yet.");
+
+    try {
+      const response = await fetch(`${GATEWAY_URL}/routes/distanceMatrix/v2:computeRouteMatrix`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": mapsKey,
+          "Content-Type": "application/json",
+          "X-Goog-FieldMask":
+            "originIndex,destinationIndex,distanceMeters,duration,condition",
+        },
+        body: JSON.stringify({
+          origins: [
+            {
+              waypoint: {
+                location: {
+                  latLng: { latitude: data.origin.lat, longitude: data.origin.lng },
+                },
+              },
+            },
+          ],
+          destinations: data.destinations.map((d) => ({
+            waypoint: { location: { latLng: { latitude: d.lat, longitude: d.lng } } },
+          })),
+          travelMode: "DRIVE",
+          routingPreference: "TRAFFIC_UNAWARE",
+        }),
+      });
+
+      if (!response.ok) {
+        const body = await response.text();
+        console.error(`Route matrix failed [${response.status}]: ${body}`);
+        return fallback("Live distances are unavailable right now.");
+      }
+
+      const json = (await response.json()) as {
+        destinationIndex?: number;
+        distanceMeters?: number;
+        duration?: string;
+        condition?: string;
+      }[];
+
+      const rows: DistanceRow[] = data.destinations.map((d) => ({
+        name: d.name,
+        distanceKm: null,
+        durationMin: null,
+        confidence: "unavailable" as const,
+      }));
+
+      for (const element of Array.isArray(json) ? json : []) {
+        const i = element.destinationIndex ?? -1;
+        const row = rows[i];
+        if (!row || element.condition === "ROUTE_NOT_FOUND") continue;
+        row.distanceKm = element.distanceMeters
+          ? Math.round(element.distanceMeters / 100) / 10
+          : null;
+        row.durationMin = element.duration
+          ? Math.round((Number.parseInt(element.duration.replace("s", ""), 10) || 0) / 60)
+          : null;
+        row.confidence = row.distanceKm === null ? "unavailable" : "live";
+      }
+
+      return { rows };
+    } catch (error) {
+      console.error("Route matrix error", error);
+      return fallback("Live distances are unavailable right now.");
+    }
+  });

@@ -2,6 +2,7 @@ import { Bus, Clock, Coffee, MapPin, Route as RouteIcon, Sparkles, Utensils, Wav
 
 import { ConfidenceTag } from "@/components/coastwise/ConfidenceTag";
 import { inr } from "@/components/coastwise/BudgetPanel";
+import { DistanceFromYou } from "@/components/coastwise/DistanceFromYou";
 import { RouteMapCard } from "@/components/coastwise/RouteMapCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,13 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
     day.blocks
       .filter((b) => Number.isFinite(b.lat) && Number.isFinite(b.lng))
       .map((b) => ({ name: b.title, town: b.town, lat: b.lat, lng: b.lng }));
+
+  const allStops: MapPoint[] = [];
+  for (const day of itinerary.days) {
+    for (const point of dayPoints(day)) {
+      if (!allStops.some((s) => s.name === point.name)) allStops.push(point);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -204,6 +212,7 @@ export function ItineraryView({ plan }: { plan: PlanResult }) {
             points={itinerary.routeCoords}
             height="h-96"
           />
+          <DistanceFromYou points={allStops} />
           {itinerary.days.map((day) => (
             <RouteMapCard
               key={`map-${day.day}`}
